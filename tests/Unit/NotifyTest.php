@@ -111,7 +111,7 @@ class NotifyTest extends TestCase
         Notify::forceProtocol('osc99');
         $output = $this->captureOutput(fn () => Notify::send('Body', 'Title'));
 
-        $expected = "\x1b]99;d=0:p=title;Title\x1b\\" .
+        $expected = "\x1b]99;d=0:p=title;Title\x1b\\".
                     "\x1b]99;d=1:p=body;Body\x1b\\";
 
         $this->assertSame($expected, $output);
@@ -138,7 +138,7 @@ class NotifyTest extends TestCase
         Notify::forceProtocol('osc99');
         $output = $this->captureOutput(fn () => Notify::send('Body', 'Title', Notify::URGENCY_CRITICAL));
 
-        $expected = "\x1b]99;d=0:p=title:u=2;Title\x1b\\" .
+        $expected = "\x1b]99;d=0:p=title:u=2;Title\x1b\\".
                     "\x1b]99;d=1:p=body;Body\x1b\\";
 
         $this->assertSame($expected, $output);

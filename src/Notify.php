@@ -337,13 +337,13 @@ class Notify
         // u=N sets urgency level
         $titleMeta = 'd=0:p=title';
         if ($idMeta !== '') {
-            $titleMeta .= ':' . $idMeta;
+            $titleMeta .= ':'.$idMeta;
         }
         if ($urgency !== 1) {
             $titleMeta .= ":u={$urgency}";
         }
 
-        return "\x1b]99;{$titleMeta};{$title}\x1b\\" .
+        return "\x1b]99;{$titleMeta};{$title}\x1b\\".
                "\x1b]99;d=1:p=body;{$message}\x1b\\";
     }
 
