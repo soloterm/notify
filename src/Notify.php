@@ -24,6 +24,19 @@ class Notify
     public const URGENCY_CRITICAL = 2;
 
     /**
+     * Progress states for OSC 9;4 progress bars.
+     */
+    public const PROGRESS_HIDDEN = 0;
+
+    public const PROGRESS_NORMAL = 1;
+
+    public const PROGRESS_ERROR = 2;
+
+    public const PROGRESS_INDETERMINATE = 3;
+
+    public const PROGRESS_PAUSED = 4;
+
+    /**
      * The detected terminal type.
      */
     protected static ?string $terminalType = null;
@@ -223,7 +236,7 @@ class Notify
     /**
      * Get information about the current terminal's notification capabilities.
      *
-     * @return array{terminal: ?string, protocol: ?string, supports_title: bool, supports_urgency: bool, supports_id: bool, in_multiplexer: bool, fallback_available: bool}
+     * @return array{terminal: ?string, protocol: ?string, supports_title: bool, supports_urgency: bool, supports_id: bool, supports_progress: bool, in_multiplexer: bool, fallback_available: bool}
      */
     public static function capabilities(): array
     {
@@ -235,6 +248,7 @@ class Notify
             'supports_title' => in_array($protocol, ['osc777', 'osc99'], true),
             'supports_urgency' => $protocol === 'osc99',
             'supports_id' => $protocol === 'osc99',
+            'supports_progress' => static::supportsProgress(),
             'in_multiplexer' => static::inTmux() || static::inScreen(),
             'fallback_available' => static::canFallback(),
         ];
@@ -669,5 +683,244 @@ class Notify
             // Unknown terminal - try OSC 9 as safest fallback
             default => $terminal !== null ? 'osc9' : null,
         };
+    }
+
+    // ========================================================================
+    // Progress Bar Support (OSC 9;4)
+    // Supported by: Windows Terminal, Ghostty (1.2+), iTerm2 (3.6.6+), ConEmu, Mintty
+    // ========================================================================
+
+    /**
+     * Check if the current terminal supports OSC 9;4 progress bars.
+     *
+     * Supported terminals:
+     * - Windows Terminal
+     * - Ghostty (1.2+)
+     * - iTerm2 (3.6.6+)
+     * - ConEmu
+     * - Mintty
+     */
+    public static function supportsProgress(): bool
+    {
+        $terminal = static::getTerminal();
+
+        return match ($terminal) {
+            'windows-terminal', 'ghostty' => true,
+            'iterm2' => static::compareVersion(getenv('TERM_PROGRAM_VERSION') ?: '', '3.6.6') >= 0,
+            default => false,
+        };
+    }
+
+    /**
+     * Compare two semantic version strings.
+     *
+     * Returns -1 if a < b, 0 if a == b, 1 if a > b.
+     * Handles versions like "3.6.6" or "3.6.6-beta".
+     */
+    protected static function compareVersion(string $a, string $b): int
+    {
+        // Strip any suffix after hyphen (e.g., "3.6.6-beta" -> "3.6.6")
+        $a = explode('-', $a)[0];
+        $b = explode('-', $b)[0];
+
+        $partsA = explode('.', $a);
+        $partsB = explode('.', $b);
+
+        $maxLen = max(count($partsA), count($partsB));
+
+        for ($i = 0; $i < $maxLen; $i++) {
+            $numA = (int) ($partsA[$i] ?? 0);
+            $numB = (int) ($partsB[$i] ?? 0);
+
+            if ($numA < $numB) {
+                return -1;
+            }
+            if ($numA > $numB) {
+                return 1;
+            }
+        }
+
+        return 0;
+    }
+
+    /**
+     * Show a progress bar in the terminal tab/taskbar.
+     *
+     * On terminals that don't support OSC 9;4, this method returns false
+     * without sending anything. Use supportsProgress() to check support first.
+     *
+     * @param  int  $progress  Progress percentage (0-100)
+     * @param  int  $state  Progress state (use PROGRESS_* constants)
+     */
+    public static function progress(int $progress, int $state = self::PROGRESS_NORMAL): bool
+    {
+        if (! static::supportsProgress()) {
+            return false;
+        }
+
+        $progress = max(0, min(100, $progress));
+        $state = max(0, min(4, $state));
+
+        $sequence = "\x1b]9;4;{$state};{$progress}\x07";
+        $sequence = static::wrapForMultiplexer($sequence);
+
+        return static::write($sequence);
+    }
+
+    /**
+     * Clear/hide the progress bar.
+     *
+     * Returns false if progress bars aren't supported by the current terminal.
+     */
+    public static function progressClear(): bool
+    {
+        if (! static::supportsProgress()) {
+            return false;
+        }
+
+        // Send hidden state directly to bypass the support check in progress()
+        $sequence = "\x1b]9;4;0;0\x07";
+        $sequence = static::wrapForMultiplexer($sequence);
+
+        return static::write($sequence);
+    }
+
+    /**
+     * Show error progress (red).
+     *
+     * Returns false if progress bars aren't supported by the current terminal.
+     */
+    public static function progressError(int $progress = 100): bool
+    {
+        return static::progress($progress, self::PROGRESS_ERROR);
+    }
+
+    /**
+     * Show paused progress (yellow).
+     *
+     * Returns false if progress bars aren't supported by the current terminal.
+     */
+    public static function progressPaused(int $progress): bool
+    {
+        return static::progress($progress, self::PROGRESS_PAUSED);
+    }
+
+    /**
+     * Show indeterminate/pulsing progress.
+     *
+     * Returns false if progress bars aren't supported by the current terminal.
+     */
+    public static function progressIndeterminate(): bool
+    {
+        return static::progress(0, self::PROGRESS_INDETERMINATE);
+    }
+
+    // ========================================================================
+    // Request Attention (OSC 1337 - iTerm2)
+    // ========================================================================
+
+    /**
+     * Request attention by bouncing the dock icon (iTerm2 on macOS).
+     *
+     * @param  bool  $fireworks  Show fireworks animation instead of simple bounce
+     */
+    public static function requestAttention(bool $fireworks = false): bool
+    {
+        $value = $fireworks ? 'fireworks' : 'yes';
+        $sequence = "\x1b]1337;RequestAttention={$value}\x07";
+        $sequence = static::wrapForMultiplexer($sequence);
+
+        return static::write($sequence);
+    }
+
+    /**
+     * Request attention with fireworks animation (iTerm2).
+     */
+    public static function fireworks(): bool
+    {
+        return static::requestAttention(true);
+    }
+
+    /**
+     * Steal focus - bring iTerm2 window to front.
+     */
+    public static function stealFocus(): bool
+    {
+        $sequence = "\x1b]1337;StealFocus\x07";
+        $sequence = static::wrapForMultiplexer($sequence);
+
+        return static::write($sequence);
+    }
+
+    // ========================================================================
+    // Hyperlinks (OSC 8)
+    // Supported by: iTerm2, VTE, kitty, WezTerm, Windows Terminal, etc.
+    // ========================================================================
+
+    /**
+     * Create a clickable hyperlink in terminal output.
+     *
+     * @param  string  $url  The URL to link to
+     * @param  string|null  $text  Display text (defaults to URL if not provided)
+     * @param  string|null  $id  Optional ID to group multiple hyperlinks
+     */
+    public static function hyperlink(string $url, ?string $text = null, ?string $id = null): string
+    {
+        if ($url === '') {
+            return $text ?? '';
+        }
+
+        $text ??= $url;
+
+        $params = $id !== null ? "id={$id}" : '';
+
+        return "\x1b]8;{$params};{$url}\x07{$text}\x1b]8;;\x07";
+    }
+
+    // ========================================================================
+    // Shell Integration (OSC 133)
+    // Supported by: Windows Terminal, WezTerm, VS Code terminal, kitty, iTerm2
+    // ========================================================================
+
+    /**
+     * Mark the start of a shell prompt.
+     */
+    public static function shellPromptStart(): bool
+    {
+        $sequence = "\x1b]133;A\x07";
+
+        return static::write($sequence);
+    }
+
+    /**
+     * Mark the end of prompt / start of user input.
+     */
+    public static function shellCommandStart(): bool
+    {
+        $sequence = "\x1b]133;B\x07";
+
+        return static::write($sequence);
+    }
+
+    /**
+     * Mark the start of command execution.
+     */
+    public static function shellCommandExecuted(): bool
+    {
+        $sequence = "\x1b]133;C\x07";
+
+        return static::write($sequence);
+    }
+
+    /**
+     * Mark the end of command execution.
+     *
+     * @param  int  $exitCode  The command's exit code
+     */
+    public static function shellCommandFinished(int $exitCode = 0): bool
+    {
+        $sequence = "\x1b]133;D;{$exitCode}\x07";
+
+        return static::write($sequence);
     }
 }

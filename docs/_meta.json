@@ -1,0 +1,15 @@
+{
+    "title": "Notify",
+    "description": "Send desktop notifications via OSC escape sequences in terminal applications",
+    "pages": [
+        { "slug": "index", "title": "Introduction" },
+        { "slug": "installation", "title": "Installation" },
+        { "slug": "basic-usage", "title": "Basic Usage" },
+        { "slug": "terminal-support", "title": "Terminal Support" },
+        { "slug": "advanced", "title": "Advanced Features" },
+        { "slug": "progress-bars", "title": "Progress Bars" },
+        { "slug": "terminal-features", "title": "Terminal-Specific Features" },
+        { "slug": "troubleshooting", "title": "Troubleshooting" },
+        { "slug": "api-reference", "title": "API Reference" }
+    ]
+}

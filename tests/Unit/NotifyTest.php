@@ -480,6 +480,338 @@ class NotifyTest extends TestCase
     }
 
     // =========================================================================
+    // Progress Bar Tests (OSC 9;4)
+    // =========================================================================
+
+    public function test_progress_normal(): void
+    {
+        // Use Ghostty which supports progress
+        $this->withEnv(['GHOSTTY_RESOURCES_DIR' => '/usr/share/ghostty'], function () {
+            Notify::reset();
+            $output = $this->captureOutput(fn () => Notify::progress(50));
+
+            $this->assertSame("\x1b]9;4;1;50\x07", $output);
+        });
+    }
+
+    public function test_progress_with_state(): void
+    {
+        $this->withEnv(['GHOSTTY_RESOURCES_DIR' => '/usr/share/ghostty'], function () {
+            Notify::reset();
+            $output = $this->captureOutput(fn () => Notify::progress(75, Notify::PROGRESS_ERROR));
+
+            $this->assertSame("\x1b]9;4;2;75\x07", $output);
+        });
+    }
+
+    public function test_progress_clamps_to_100(): void
+    {
+        $this->withEnv(['GHOSTTY_RESOURCES_DIR' => '/usr/share/ghostty'], function () {
+            Notify::reset();
+            $output = $this->captureOutput(fn () => Notify::progress(150));
+
+            $this->assertSame("\x1b]9;4;1;100\x07", $output);
+        });
+    }
+
+    public function test_progress_clamps_to_0(): void
+    {
+        $this->withEnv(['GHOSTTY_RESOURCES_DIR' => '/usr/share/ghostty'], function () {
+            Notify::reset();
+            $output = $this->captureOutput(fn () => Notify::progress(-50));
+
+            $this->assertSame("\x1b]9;4;1;0\x07", $output);
+        });
+    }
+
+    public function test_progress_clear(): void
+    {
+        $this->withEnv(['GHOSTTY_RESOURCES_DIR' => '/usr/share/ghostty'], function () {
+            Notify::reset();
+            $output = $this->captureOutput(fn () => Notify::progressClear());
+
+            $this->assertSame("\x1b]9;4;0;0\x07", $output);
+        });
+    }
+
+    public function test_progress_error(): void
+    {
+        $this->withEnv(['GHOSTTY_RESOURCES_DIR' => '/usr/share/ghostty'], function () {
+            Notify::reset();
+            $output = $this->captureOutput(fn () => Notify::progressError(100));
+
+            $this->assertSame("\x1b]9;4;2;100\x07", $output);
+        });
+    }
+
+    public function test_progress_paused(): void
+    {
+        $this->withEnv(['GHOSTTY_RESOURCES_DIR' => '/usr/share/ghostty'], function () {
+            Notify::reset();
+            $output = $this->captureOutput(fn () => Notify::progressPaused(60));
+
+            $this->assertSame("\x1b]9;4;4;60\x07", $output);
+        });
+    }
+
+    public function test_progress_indeterminate(): void
+    {
+        $this->withEnv(['GHOSTTY_RESOURCES_DIR' => '/usr/share/ghostty'], function () {
+            Notify::reset();
+            $output = $this->captureOutput(fn () => Notify::progressIndeterminate());
+
+            $this->assertSame("\x1b]9;4;3;0\x07", $output);
+        });
+    }
+
+    public function test_progress_wraps_for_tmux(): void
+    {
+        $this->withEnv([
+            'TMUX' => '/tmp/tmux-1000/default,12345,0',
+            'GHOSTTY_RESOURCES_DIR' => '/usr/share/ghostty',
+        ], function () {
+            Notify::reset();
+            $output = $this->captureOutput(fn () => Notify::progress(50));
+
+            $this->assertSame("\x1bPtmux;\x1b\x1b]9;4;1;50\x07\x1b\\", $output);
+        });
+    }
+
+    public function test_progress_returns_false_on_unsupported_terminal(): void
+    {
+        $this->withEnv([
+            'KITTY_WINDOW_ID' => '1',  // Kitty doesn't support progress
+            'GHOSTTY_RESOURCES_DIR' => false,
+            'WT_SESSION' => false,
+            'ITERM_SESSION_ID' => false,
+            'TERM_PROGRAM' => false,
+        ], function () {
+            Notify::reset();
+            $result = Notify::progress(50);
+
+            $this->assertFalse($result);
+        });
+    }
+
+    public function test_supports_progress_ghostty(): void
+    {
+        $this->withEnv(['GHOSTTY_RESOURCES_DIR' => '/usr/share/ghostty'], function () {
+            Notify::reset();
+            $this->assertTrue(Notify::supportsProgress());
+        });
+    }
+
+    public function test_supports_progress_windows_terminal(): void
+    {
+        $this->withEnv(['WT_SESSION' => 'abc-123'], function () {
+            Notify::reset();
+            $this->assertTrue(Notify::supportsProgress());
+        });
+    }
+
+    public function test_supports_progress_iterm2_366(): void
+    {
+        $this->withEnv([
+            'ITERM_SESSION_ID' => 'w0t0p0:12345',
+            'TERM_PROGRAM_VERSION' => '3.6.6',
+        ], function () {
+            Notify::reset();
+            $this->assertTrue(Notify::supportsProgress());
+        });
+    }
+
+    public function test_supports_progress_iterm2_367(): void
+    {
+        $this->withEnv([
+            'ITERM_SESSION_ID' => 'w0t0p0:12345',
+            'TERM_PROGRAM_VERSION' => '3.6.7',
+        ], function () {
+            Notify::reset();
+            $this->assertTrue(Notify::supportsProgress());
+        });
+    }
+
+    public function test_does_not_support_progress_iterm2_365(): void
+    {
+        $this->withEnv([
+            'ITERM_SESSION_ID' => 'w0t0p0:12345',
+            'TERM_PROGRAM_VERSION' => '3.6.5',
+        ], function () {
+            Notify::reset();
+            $this->assertFalse(Notify::supportsProgress());
+        });
+    }
+
+    public function test_does_not_support_progress_iterm2_no_version(): void
+    {
+        $this->withEnv([
+            'ITERM_SESSION_ID' => 'w0t0p0:12345',
+            'TERM_PROGRAM_VERSION' => false,
+        ], function () {
+            Notify::reset();
+            $this->assertFalse(Notify::supportsProgress());
+        });
+    }
+
+    public function test_does_not_support_progress_kitty(): void
+    {
+        $this->withEnv(['KITTY_WINDOW_ID' => '1'], function () {
+            Notify::reset();
+            $this->assertFalse(Notify::supportsProgress());
+        });
+    }
+
+    public function test_does_not_support_progress_wezterm(): void
+    {
+        $this->withEnv(['WEZTERM_PANE' => '0'], function () {
+            Notify::reset();
+            $this->assertFalse(Notify::supportsProgress());
+        });
+    }
+
+    public function test_capabilities_includes_supports_progress(): void
+    {
+        $this->withEnv(['GHOSTTY_RESOURCES_DIR' => '/usr/share/ghostty'], function () {
+            Notify::reset();
+            $caps = Notify::capabilities();
+
+            $this->assertArrayHasKey('supports_progress', $caps);
+            $this->assertTrue($caps['supports_progress']);
+        });
+    }
+
+    public function test_capabilities_supports_progress_false_for_kitty(): void
+    {
+        $this->withEnv(['KITTY_WINDOW_ID' => '1'], function () {
+            Notify::reset();
+            $caps = Notify::capabilities();
+
+            $this->assertArrayHasKey('supports_progress', $caps);
+            $this->assertFalse($caps['supports_progress']);
+        });
+    }
+
+    // =========================================================================
+    // Request Attention Tests (OSC 1337)
+    // =========================================================================
+
+    public function test_request_attention(): void
+    {
+        $output = $this->captureOutput(fn () => Notify::requestAttention());
+
+        $this->assertSame("\x1b]1337;RequestAttention=yes\x07", $output);
+    }
+
+    public function test_request_attention_with_fireworks(): void
+    {
+        $output = $this->captureOutput(fn () => Notify::requestAttention(true));
+
+        $this->assertSame("\x1b]1337;RequestAttention=fireworks\x07", $output);
+    }
+
+    public function test_fireworks_helper(): void
+    {
+        $output = $this->captureOutput(fn () => Notify::fireworks());
+
+        $this->assertSame("\x1b]1337;RequestAttention=fireworks\x07", $output);
+    }
+
+    public function test_steal_focus(): void
+    {
+        $output = $this->captureOutput(fn () => Notify::stealFocus());
+
+        $this->assertSame("\x1b]1337;StealFocus\x07", $output);
+    }
+
+    public function test_request_attention_wraps_for_tmux(): void
+    {
+        $this->withEnv(['TMUX' => '/tmp/tmux-1000/default,12345,0'], function () {
+            Notify::reset();
+            $output = $this->captureOutput(fn () => Notify::requestAttention());
+
+            $this->assertSame("\x1bPtmux;\x1b\x1b]1337;RequestAttention=yes\x07\x1b\\", $output);
+        });
+    }
+
+    // =========================================================================
+    // Hyperlink Tests (OSC 8)
+    // =========================================================================
+
+    public function test_hyperlink_basic(): void
+    {
+        $result = Notify::hyperlink('https://example.com', 'Click here');
+
+        $this->assertSame("\x1b]8;;https://example.com\x07Click here\x1b]8;;\x07", $result);
+    }
+
+    public function test_hyperlink_without_text_uses_url(): void
+    {
+        $result = Notify::hyperlink('https://example.com');
+
+        $this->assertSame("\x1b]8;;https://example.com\x07https://example.com\x1b]8;;\x07", $result);
+    }
+
+    public function test_hyperlink_with_id(): void
+    {
+        $result = Notify::hyperlink('https://example.com', 'Link', 'link1');
+
+        $this->assertSame("\x1b]8;id=link1;https://example.com\x07Link\x1b]8;;\x07", $result);
+    }
+
+    public function test_hyperlink_empty_url_returns_text(): void
+    {
+        $result = Notify::hyperlink('', 'Plain text');
+
+        $this->assertSame('Plain text', $result);
+    }
+
+    public function test_hyperlink_empty_url_and_text(): void
+    {
+        $result = Notify::hyperlink('');
+
+        $this->assertSame('', $result);
+    }
+
+    // =========================================================================
+    // Shell Integration Tests (OSC 133)
+    // =========================================================================
+
+    public function test_shell_prompt_start(): void
+    {
+        $output = $this->captureOutput(fn () => Notify::shellPromptStart());
+
+        $this->assertSame("\x1b]133;A\x07", $output);
+    }
+
+    public function test_shell_command_start(): void
+    {
+        $output = $this->captureOutput(fn () => Notify::shellCommandStart());
+
+        $this->assertSame("\x1b]133;B\x07", $output);
+    }
+
+    public function test_shell_command_executed(): void
+    {
+        $output = $this->captureOutput(fn () => Notify::shellCommandExecuted());
+
+        $this->assertSame("\x1b]133;C\x07", $output);
+    }
+
+    public function test_shell_command_finished_with_exit_code(): void
+    {
+        $output = $this->captureOutput(fn () => Notify::shellCommandFinished(0));
+
+        $this->assertSame("\x1b]133;D;0\x07", $output);
+    }
+
+    public function test_shell_command_finished_with_error_code(): void
+    {
+        $output = $this->captureOutput(fn () => Notify::shellCommandFinished(127));
+
+        $this->assertSame("\x1b]133;D;127\x07", $output);
+    }
+
+    // =========================================================================
     // Helpers
     // =========================================================================
 
