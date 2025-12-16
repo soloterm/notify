@@ -343,3 +343,13 @@ Solo was developed by Aaron Francis. If you like it, please let me know!
 * Website: https://aaronfrancis.com
 * YouTube: https://youtube.com/@aarondfrancis
 * GitHub: https://github.com/aarondfrancis/solo
+
+## Related Projects
+
+- [Solo](https://github.com/soloterm/solo) - All-in-one Laravel command for local development
+- [Screen](https://github.com/soloterm/screen) - Pure PHP terminal renderer
+- [Dumps](https://github.com/soloterm/dumps) - Laravel command to intercept dumps
+- [Grapheme](https://github.com/soloterm/grapheme) - Unicode grapheme width calculator
+- [Notify Laravel](https://github.com/soloterm/notify-laravel) - Laravel integration for soloterm/notify
+- [TNotify](https://github.com/soloterm/tnotify) - Standalone, cross-platform CLI for desktop notifications
+- [VTail](https://github.com/soloterm/vtail) - Vendor-aware tail for Laravel logs
