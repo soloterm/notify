@@ -63,7 +63,7 @@ class LinuxFallback implements FallbackInterface
         // Add message
         $args[] = escapeshellarg($message);
 
-        $command = 'notify-send ' . implode(' ', $args) . ' 2>/dev/null';
+        $command = 'notify-send '.implode(' ', $args).' 2>/dev/null';
 
         exec($command, $output, $returnCode);
 
