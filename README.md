@@ -42,7 +42,7 @@ Building CLI applications often requires notifying users when long-running tasks
 * Build finished
 * Tests passed (or failed)
 * Queue job completed
-* Deployment done
+* Migration finished
 
 Instead of relying on external tools like `notify-send` or `osascript`, this library uses OSC (Operating System Command) escape sequences that modern terminal emulators interpret directly. No dependencies, no shell commands, just pure PHP.
 
