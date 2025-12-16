@@ -213,6 +213,7 @@ $caps = Notify::capabilities();
 //     'supports_title' => true,
 //     'supports_urgency' => true,
 //     'supports_id' => true,
+//     'supports_progress' => true,
 //     'in_multiplexer' => false,
 //     'fallback_available' => true,
 // ]
@@ -250,6 +251,45 @@ if (Notify::inScreen()) {
 ```php
 // Useful for testing or when terminal changes
 Notify::reset();
+```
+
+### Progress Bars (OSC 9;4)
+
+Display progress in your terminal's tab or taskbar:
+
+```php
+// Check if supported
+if (Notify::supportsProgress()) {
+    // Show progress (0-100)
+    Notify::progress(50);
+
+    // Different states
+    Notify::progressError(75);        // Red - error state
+    Notify::progressPaused(60);       // Yellow - paused
+    Notify::progressIndeterminate();  // Pulsing - unknown duration
+
+    // Clear when done
+    Notify::progressClear();
+}
+```
+
+**Supported terminals**: Windows Terminal, Ghostty 1.2+, iTerm2 3.6.6+, ConEmu, Mintty
+
+### Hyperlinks (OSC 8)
+
+Create clickable links in terminal output:
+
+```php
+echo Notify::hyperlink('https://example.com', 'Click here');
+echo Notify::hyperlink('https://example.com'); // URL as display text
+```
+
+### Request Attention (iTerm2 only)
+
+```php
+Notify::requestAttention();           // Bounce dock icon
+Notify::fireworks();                  // Fireworks animation
+Notify::stealFocus();                 // Bring window to front
 ```
 
 ## How It Works
