@@ -1,11 +1,13 @@
 # Changelog
 
-All notable changes to `soloterm/notify` will be documented in this file.
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [0.1.0] - 2025-12-16
-
+### Added
 - Initial release
 - OSC 9 support (iTerm2)
 - OSC 777 support (WezTerm, Ghostty, VTE)
@@ -18,3 +20,5 @@ All notable changes to `soloterm/notify` will be documented in this file.
 - Request attention / fireworks (OSC 1337, iTerm2)
 - Shell integration markers (OSC 133)
 - External fallback to system notification tools (notify-send, osascript, PowerShell)
+
+[Unreleased]: https://github.com/soloterm/notify/compare/HEAD...HEAD
