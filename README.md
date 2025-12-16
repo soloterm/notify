@@ -8,6 +8,33 @@ A PHP library for sending desktop notifications via OSC escape sequences in term
 
 This library was built to support [Solo](https://github.com/soloterm/solo), your all-in-one Laravel command to tame local development.
 
+<table>
+<tr>
+<td><strong>OSC Notifications (Ghostty)</strong></td>
+<td><strong>OSC Notifications (iTerm2)</strong></td>
+</tr>
+<tr>
+<td><img src="art/ghostty-osc.png" alt="Ghostty OSC notification" width="400"></td>
+<td><img src="art/iterm-osc.png" alt="iTerm2 OSC notification" width="400"></td>
+</tr>
+<tr>
+<td><strong>macOS Fallback</strong></td>
+<td><strong>Fireworks (iTerm2)</strong></td>
+</tr>
+<tr>
+<td><img src="art/mac-fallback.png" alt="macOS fallback notification" width="400"></td>
+<td><img src="art/fireworks.png" alt="iTerm2 fireworks" width="400"></td>
+</tr>
+<tr>
+<td><strong>Progress Bars (Ghostty)</strong></td>
+<td><strong>Progress Bars (iTerm2)</strong></td>
+</tr>
+<tr>
+<td><img src="art/ghostty-progress.png" alt="Ghostty progress bar" width="400"></td>
+<td><img src="art/iterm-progress.png" alt="iTerm2 progress bar" width="400"></td>
+</tr>
+</table>
+
 ## Why Use This Library?
 
 Building CLI applications often requires notifying users when long-running tasks complete:
