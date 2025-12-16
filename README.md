@@ -1,8 +1,8 @@
 # Notify
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/soloterm/notify)](https://packagist.org/packages/soloterm/notify)
-[![Total Downloads](https://img.shields.io/packagist/dt/soloterm/notify)](https://packagist.org/packages/soloterm/notify)
-[![License](https://img.shields.io/packagist/l/soloterm/notify)](https://packagist.org/packages/soloterm/notify)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/soloterm/notify.svg?style=flat-square)](https://packagist.org/packages/soloterm/notify)
+[![Total Downloads](https://img.shields.io/packagist/dt/soloterm/notify.svg?style=flat-square)](https://packagist.org/packages/soloterm/notify)
+[![License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE)
 
 A PHP library for sending desktop notifications via OSC escape sequences in terminal applications.
 
